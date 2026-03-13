@@ -16,10 +16,11 @@ interface PatientsResponse {
   meta: Meta;
 }
 
-async function fetchPatients(page = 1, search = ""): Promise<PatientsResponse> {
-  const params = new URLSearchParams({page: String(page), limit: "12", search: search})
-  console.log("SEARCH INSIDE PATIENTPAGE:", search)
-  if(search) params.set("search", search)
+async function fetchPatients(page = 1, search = "", sortBy = "patient_name", sortDir = "asc"): Promise<PatientsResponse> {
+  const params = new URLSearchParams({ page: String(page), limit: "12", search: search })
+  if (search) params.set("search", search)
+  if (sortBy) params.set("sort_by", sortBy);
+  if (sortDir) params.set("sort_dir", sortDir)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/patients?${params.toString()}`, {
     cache: "no-store",
@@ -31,34 +32,35 @@ async function fetchPatients(page = 1, search = ""): Promise<PatientsResponse> {
 // Maps a medical issue string to a pill color style
 function getIssueStyle(issue: string): string {
   const map: Record<string, string> = {
-    fever:           "bg-red-100 text-red-600 border border-red-300",
-    headache:        "bg-orange-100 text-orange-600 border border-orange-300",
-    "sore throat":   "bg-yellow-100 text-yellow-600 border border-yellow-300",
-    "sprained ankle":"bg-green-100 text-green-600 border border-green-300",
-    rash:            "bg-pink-100 text-pink-600 border border-pink-300",
-    sinusitis:       "bg-amber-100 text-amber-700 border border-amber-300",
+    fever: "bg-red-100 text-red-600 border border-red-300",
+    headache: "bg-orange-100 text-orange-600 border border-orange-300",
+    "sore throat": "bg-yellow-100 text-yellow-600 border border-yellow-300",
+    "sprained ankle": "bg-green-100 text-green-600 border border-green-300",
+    rash: "bg-pink-100 text-pink-600 border border-pink-300",
+    sinusitis: "bg-amber-100 text-amber-700 border border-amber-300",
     "ear infection": "bg-teal-100 text-teal-600 border border-teal-300",
   };
   return map[issue?.toLowerCase()] ?? "bg-gray-100 text-gray-600 border border-gray-300";
 }
 
 export default async function PatientsPage({
-  page=1,
-  search= "",
+  page = 1,
+  search = "",
+  sortBy = "patient_name",
+  sortDir = "asc",
 }: {
-  page?:number;
+  page?: number;
   search?: string;
+  sortBy?: string;
+  sortDir?: string;
 }) {
-//   const page = Number(searchParams?.page ?? "1");
-//   console.log("this is the page", page)
- console.log("✅ PatientsPage — page:", page, "search:", search); // debug
 
   let patients: Patient[] = [];
   let meta: Meta = { total: 0, page: 1, limit: 12, totalPages: 1 };
   let fetchError: string | null = null;
 
   try {
-    const result = await fetchPatients(page, search);
+    const result = await fetchPatients(page, search, sortBy, sortDir);
     patients = result.data;
     // console.log("Patient is here ", patients)
     meta = result.meta;
@@ -93,7 +95,7 @@ export default async function PatientsPage({
             >
               <div className="flex items-center gap-3 mb-3 bg-blue-100 p-3">
                 <Image
-                  src={ "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyYEFP3pgrr6-pMWUYx8VZ068CQZuyFgeiEHVAGv_gl3TcaXMi33OwI-8&s"}
+                  src={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyYEFP3pgrr6-pMWUYx8VZ068CQZuyFgeiEHVAGv_gl3TcaXMi33OwI-8&s"}
                   alt={p.patient_name}
                   height={20}
                   width={20}
@@ -112,7 +114,7 @@ export default async function PatientsPage({
                 </span>
               </div>
 
-              {/* Medical issue pill */}
+              
               <span
                 className={`inline-block text-xs font-semibold capitalize px-3 py-1 rounded-md mb-3 ${getIssueStyle(
                   p.medical_issue
@@ -121,26 +123,26 @@ export default async function PatientsPage({
                 {p.medical_issue}
               </span>
 
-              {/* Contact info */}
+             
               <div className="text-xs text-gray-500 space-y-1.5">
                 <div className="flex items-start gap-1.5">
-                  {/* Location icon */}
-                  <MapPin size={15}/>
                   
+                  <MapPin size={15} />
+
                   <span className="truncate text-black">{contact?.address ?? "N/A"}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  {/* Phone icon */}
-                  <Phone size={15}/>
+               
+                  <Phone size={15} />
                   <span className={contact?.number ? "text-black" : "text-red-400"}>
                     {contact?.number ?? "N/A"}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  {/* Email icon */}
-                  <Mail size={15}/>
+               
+                  <Mail size={15} />
                   <span className={`truncate ${contact?.email ? "text-black" : "text-red-400"}`}>
                     {contact?.email ?? "N/A"}
                   </span>
@@ -151,9 +153,9 @@ export default async function PatientsPage({
         })}
       </div>
 
-      {/* Pagination */}
+     
       <div className="flex items-center justify-center gap-1.5 mt-8">
-        {/* Previous */}
+        
         {page > 1 ? (
           <a
             href={`/?page=${page - 1}`}
@@ -176,7 +178,7 @@ export default async function PatientsPage({
           </button>
         )}
 
-        {/* Page number buttons */}
+       
         {/* {pageNumbers.map((num) => (
           <a
             key={num}
@@ -192,27 +194,27 @@ export default async function PatientsPage({
         ))} */}
 
         {/* Next */}
-            {page < meta.totalPages ? (
-            <a
-                href={`/?page=${page + 1}`}
-                className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 bg-white hover:bg-gray-50 transition-colors"
-            >
-                Next
-                {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        {page < meta.totalPages ? (
+          <a
+            href={`/?page=${page + 1}`}
+            className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+          >
+            Next
+            {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg> */}
-            </a>
-            ) : (
-            <button
-                disabled
-                className="flex items-center gap-1 px-3 py-1.5 border border-gray-100 rounded-lg text-sm text-gray-300 bg-white cursor-not-allowed"
-            >
-                Next
-                {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          </a>
+        ) : (
+          <button
+            disabled
+            className="flex items-center gap-1 px-3 py-1.5 border border-gray-100 rounded-lg text-sm text-gray-300 bg-white cursor-not-allowed"
+          >
+            Next
+            {/* <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg> */}
-            </button>
-            )}
+          </button>
+        )}
       </div>
     </main>
   );

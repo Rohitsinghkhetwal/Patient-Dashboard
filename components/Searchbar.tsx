@@ -1,5 +1,3 @@
-
-
 "use client";
 import React, { useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -10,25 +8,22 @@ import {
   ChevronsUpDown,
   FileText,
   Download,
-  X,
 } from "lucide-react";
 
-const DEFAULT_CHIPS = [
-  { id: "1", label: "Option 1" },
-  { id: "2", label: "Option 2" },
-  { id: "3", label: "Option 3" },
-  { id: "4", label: "Option 4" },
+const SORT_BY_OPTIONS = [
+  { label: "Name", value: "patient_name" },
+  { label: "Age",  value: "age" },
+  { label: "ID",   value: "patient_id" },
 ];
 
-const DEFAULT_SORT_OPTIONS = [
-  { label: "option 1", value: "opt1" },
-  { label: "option 2", value: "opt2" },
-  { label: "option 3", value: "opt3" },
+const SORT_DIR_OPTIONS = [
+  { label: "Ascending",  value: "asc" },
+  { label: "Descending", value: "desc" },
 ];
 
 const SortSelect: React.FC<{
   value: string;
-  options: typeof DEFAULT_SORT_OPTIONS;
+  options: typeof SORT_DIR_OPTIONS;
   onChange: (v: string) => void;
 }> = ({ value, options, onChange }) => (
   <div className="relative inline-flex items-center">
@@ -54,9 +49,9 @@ const PatientSearchBar: React.FC = () => {
   const searchParams = useSearchParams();
 
   const [localSearch, setLocalSearch] = useState<string>(searchParams.get("search") ?? "");
-  const [localSort1, setLocalSort1] = useState<string>("opt1");
-  const [localSort2, setLocalSort2] = useState<string>("opt1");
-  const [localChips, setLocalChips] = useState(DEFAULT_CHIPS);
+  const [localSort1,  setLocalSort1]  = useState(searchParams.get("sort_by")  ?? "patient_name");
+  const [localSort2,  setLocalSort2]  = useState(searchParams.get("sort_dir") ?? "asc");
+  const [localChips]                  = useState(SORT_BY_OPTIONS);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleSearchChange = (v: string) => {
@@ -64,25 +59,22 @@ const PatientSearchBar: React.FC = () => {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString());
-      if (v) {
-        params.set("search", v);
-      } else {
-        params.delete("search");
-      }
+      if (v) { params.set("search", v); } else { params.delete("search"); }
       params.set("page", "1");
       router.replace(`/?${params.toString()}`);
-
-    }, 500)
-
+    }, 500);
   };
 
-  const handleRemoveChip = (id: string) => {
-    setLocalChips((prev) => prev.filter((c) => c.id !== id));
+  const handleSortChange = (sortBy: string, sortDir: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("sort_by",  sortBy);
+    params.set("sort_dir", sortDir);
+    params.set("page", "1");
+    router.replace(`/?${params.toString()}`);
   };
 
   return (
     <div className="w-full bg-white">
-
 
       <div className="flex items-center justify-end gap-1.5 text-[13px] text-gray-500 flex-shrink-0 mx-5 mt-2">
         <ListFilter size={14} strokeWidth={2} />
@@ -94,10 +86,10 @@ const PatientSearchBar: React.FC = () => {
 
       <div className="mx-5 mt-3 px-3.5 pt-2.5 pb-3">
 
+        
+        <div className="flex flex-col gap-2.5 md:flex-row md:items-center">
 
-        <div className="flex items-center gap-2.5">
-
-
+          
           <div className="flex-1 flex items-center gap-2 border border-gray-300 rounded-md px-3 py-[7px] bg-white focus-within:border-blue-500 focus-within:ring-[3px] focus-within:ring-blue-500/10 transition-all duration-150">
             <Search size={14} strokeWidth={2.5} className="text-gray-400 flex-shrink-0" />
             <input
@@ -114,35 +106,25 @@ const PatientSearchBar: React.FC = () => {
               <SlidersHorizontal size={14} strokeWidth={2} />
             </button>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+
+          
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[13px] font-medium text-gray-700 whitespace-nowrap">Sort by:</span>
-            <SortSelect value={localSort1} options={DEFAULT_SORT_OPTIONS} onChange={setLocalSort1} />
-            <SortSelect value={localSort2} options={DEFAULT_SORT_OPTIONS} onChange={setLocalSort2} />
+            <SortSelect
+              value={localSort1}
+              options={SORT_BY_OPTIONS}
+              onChange={(v) => { setLocalSort1(v); handleSortChange(v, localSort2); }}
+            />
+            <SortSelect
+              value={localSort2}
+              options={SORT_DIR_OPTIONS}
+              onChange={(v) => { setLocalSort2(v); handleSortChange(localSort1, v); }}
+            />
           </div>
         </div>
-
-        {localChips.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2.5">
-            {localChips.map((chip) => (
-              <span
-                key={chip.id}
-                className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 border border-gray-300 rounded-full text-[13px] text-gray-700 bg-gray-50 leading-snug"
-              >
-                {chip.label}
-                <button
-                  onClick={() => handleRemoveChip(chip.id)}
-                  aria-label={`Remove ${chip.label}`}
-                  className="flex items-center justify-center w-[15px] h-[15px] rounded-full text-gray-400 bg-transparent border-0 cursor-pointer hover:text-red-500 transition-colors duration-150"
-                >
-                  <X size={11} strokeWidth={2.5} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Export buttons */}
+      
       <div className="flex justify-end items-center gap-2 px-5 pt-2.5 pb-1">
         <button className="flex items-center gap-1.5 px-3 py-[5px] border border-gray-300 rounded-md bg-white text-[12.5px] font-medium text-gray-700 cursor-pointer hover:bg-gray-50 transition-colors duration-150">
           <FileText size={13} strokeWidth={2} className="text-red-500" />

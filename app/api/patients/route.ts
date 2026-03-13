@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
             patients = patients.filter(
                 (p) =>
                     p.patient_name.toLowerCase().includes(search) ||
+                    p.medical_issue.toLowerCase().includes(search) ||
                     p.contact.some(
                         (c) =>
                             c.email?.toLowerCase()?.includes(search) ||
