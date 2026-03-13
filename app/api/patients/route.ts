@@ -7,15 +7,18 @@ import { Patient } from "@/lib/Types/types";
 export async function GET(req: NextRequest) {
     try {
         const { searchParams } = req.nextUrl;
+        console.log("this is the search params", searchParams)
         const page = Math.max(1, Number(searchParams.get("page") ?? "1"))
         const limit = Math.min(100, Number(searchParams.get("limit") ?? "12"))
         const search = (searchParams.get("search") ?? "").toLowerCase().trim();
+        console.log("Search params recienved", search)
         const issue = (searchParams.get("medical_issue") ?? "").toLowerCase().trim()
         const sortBy = (searchParams.get("sort_by") ?? "patient_id") as keyof Patient;
         const sortDir = (searchParams.get("sort_dir") ?? "asc") === "desc" ? "desc" : "asc";
         
         //fetch all the Patient data here ->
         let patients = getAllPatients()
+        console.log("Patients ", patients.length)
 
 
         if (issue) {
@@ -30,10 +33,11 @@ export async function GET(req: NextRequest) {
                     p.patient_name.toLowerCase().includes(search) ||
                     p.contact.some(
                         (c) =>
-                            c.email.toLowerCase().includes(search) ||
-                            c.address.toLowerCase().includes(search)
+                            c.email?.toLowerCase()?.includes(search) ||
+                            c.address?.toLowerCase()?.includes(search)
                     )
             );
+            console.log("Length after search ====", patients.length)
         }
 
         patients = [...patients].sort((a, b) => {
